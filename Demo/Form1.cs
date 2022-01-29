@@ -30,7 +30,7 @@ namespace Demo
                 int id = item.Index;
                 dlf.AddDown(path, downloadPath, id, id + filename);
             }
-            dlf.StartDown(1);
+            dlf.StartDown();
         }
 
         private void Form1_Load(object sender, EventArgs e)

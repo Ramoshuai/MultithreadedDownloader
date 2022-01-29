@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -8,8 +9,18 @@ namespace Gac
   
     public class DownLoadFile
     {
-        public int DownLoadThreadNum = 3;
-        List<Thread> list = new List<Thread>();
+        /// <summary>
+        /// 下载线程数
+        /// </summary>
+        public int DownLoadThreadNum { get; set; } = 3;
+
+        /// <summary>
+        /// 任务数
+        /// </summary>
+        public int TaskNum { get; set; } = 3;
+
+        private readonly List<Thread> list = new List<Thread>();
+
         public DownLoadFile()
         {
             doSendMsg += Change;
@@ -18,7 +29,7 @@ namespace Gac
         {
             if (msg.Tag==DownStatus.Error||msg.Tag==DownStatus.End)
             {
-                StartDown(1);
+                StartDown();
             }
         }
         public void AddDown(string DownUrl,string Dir, int Id = 0,string FileName="")
@@ -29,19 +40,42 @@ namespace Gac
             });
             list.Add(tsk);
         }
-        public void StartDown(int StartNum=3)
+        public void StartDown()
         {
-            for (int i2 = 0; i2 < StartNum; i2++)
+            //for (int i2 = 0; i2 < StartNum; i2++)
+            //{
+            //    lock (list)
+            //    {
+            //        for (int i = 0; i < list.Count; i++)
+            //        {
+            //            if (list[i].ThreadState == ThreadState.Unstarted || list[i].ThreadState == ThreadState.Suspended)
+            //            {
+            //                list[i].Start();
+            //                break;
+            //            }
+            //        }
+            //    }
+            //}
+            //这个地方还有些问题没处理
+            lock (list)
             {
-                lock (list)
+                var startNum = 0;
+                for (int i = 0; i < list.Count; i++)
                 {
-                    for (int i = 0; i < list.Count; i++)
+                    if (list[i].ThreadState == ThreadState.Running|| list[i].ThreadState== ThreadState.WaitSleepJoin)
+                        startNum += 1;
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (list[i].ThreadState == ThreadState.Unstarted || list[i].ThreadState == ThreadState.Suspended)
                     {
-                        if (list[i].ThreadState == ThreadState.Unstarted || list[i].ThreadState == ThreadState.Suspended)
+                        if (startNum < TaskNum)
                         {
                             list[i].Start();
-                            break;
+                            startNum += 1;
                         }
+                        else
+                            return;
                     }
                 }
             }
